@@ -1,16 +1,10 @@
 /* EXERCISE 1 */
 
-// Load Country and Contests (year) into Nodes
-
 LOAD CSV WITH HEADERS FROM "file:///eurovision_location.csv" AS row
 MERGE (contest:Contest {year: toInteger(row.Year)})
 SET contest.city = row.Location
 MERGE (winner:Country {name: row.Country})
-MERGE (winner)-[:Winning_Entry]->(contest);
-
-// SUCCESS Set 72 properties, completed after 13 ms.
-
-// Load the Winning Artists and Song
+MERGE (contest)-[:Winning_Entry]->(winner);
 
 LOAD CSV WITH HEADERS FROM "file:///Eurovision_Winners.csv" AS row
 MATCH (contest:Contest {year: toInteger(row.Year)})
@@ -20,10 +14,6 @@ SET entry.artist = row.Artist,
     entry.song = row.Song,
     entry.points = toInteger(row.Total_Points);
 
-// SUCCESS Set 216 properties, completed after 18 ms.
-
-// Load the voting results
-
 LOAD CSV WITH HEADERS FROM "file:///eurovision_results.csv" AS row
 MATCH (contest:Contest {year: toInteger(row.Year)})
 MERGE (from:Country {name: row.From})
@@ -32,22 +22,20 @@ MERGE (contest)-[:Voting_Result]->(from)
 MERGE (from)-[vote:VOTED_FOR {year: toInteger(row.Year)}]->(to)
 SET vote.points = toInteger(row.Points);
 
-// SUCCESS Set 16467 properties, completed after 1253 ms.
+---
 
 /* Exercise 2 */
 
-// Countries with >2 wins
-
+// Query
 MATCH (contest:Contest)-[:Winning_Entry]->(country:Country)
 WITH country, count(contest) AS wins
 WHERE wins > 2
-RETURN country.name AS country, wins
+RETURN country.name AS Country, wins AS Wins
 ORDER BY wins DESC;
 
-// SUCCESS Completed after 8 ms.
+// Results
 
-/**
-country,wins
+Country,Wins
 Ireland,7
 Sweden,7
 Netherlands,5
@@ -61,20 +49,19 @@ Italy,3
 Austria,3
 Norway,3
 Ukraine,3
-*/
+
+---
 
 /* Exercise 3 */
-
-// Host countries that won their own contest
-// The query should list the winning nations, the song they won with and the year in which
-// they won returned in chronological order.
 
 /* The "Country" given by `eurovision_location.csv` is the country that WON that years contest, not the host! 
 As the previous winner of EuroVision hosts the next years context, can we assume that if a country wins two years
 in a row, they have won their own hosted contest? */
 
-MATCH (country:Country)<-[:Winning_Entry]-(contestOne:Contest)
-MATCH (country)<-[entryTwo:Winning_Entry]-(contestTwo:Contest)
+// Query
+
+MATCH (contestOne:Contest)-[:Winning_Entry]->(country:Country)
+MATCH (contestTwo:Contest)-[entryTwo:Winning_Entry]->(country)
 WHERE contestTwo.year = contestOne.year + 1
 RETURN country.name AS WinningHostNation, entryTwo.song AS Song, contestTwo.year AS Year
 ORDER BY Year;
@@ -84,35 +71,33 @@ hosted in Lugano, Switzerland. As this wasn't a consecutive win, being the first
 manually check for this contest, `WHERE (country.name = "Switzerland" AND contestOne.year = 1956)`, but this feels cheaty...
 
 This query would also break if a country chose not to host the contest after a win, such as if Ukraine had won in 2023,
-which would have been a consecutive win, but not a home win as the contest was hosted in the UK that year! 
-TL;DR, the dataset is flawed. */
+which would have been a consecutive win, but not a home win as the contest was hosted in the UK that year! */
 
-// SUCCESS Started streaming 5 records after 10 ms and completed after 13 ms.
+// Results
 
-/**
 WinningHostNation,Song,Year
 Spain,"\""Vivo cantando\""",1969
 Luxembourg,"\""Tu te reconnaitras\""",1973
 Israel,"\""Hallelujah\""",1979
 Ireland,"\""In Your Eyes\""",1993
 Ireland,"\""Rock 'n' Roll Kids\""",1994
-*/
+
+---
 
 /* Exercise 4 */
 
-// Produce a Neo4j query to identify all the persistent friendships between countries. 
-// The query should list both countries and the number of points given. 
-// The query result should be listed in alphabetical order by the country giving the points.
-
 // Define persistent?
 
-MATCH (from:Country)-[vote:VOTED_FOR]->(to:Country)
-RETURN from.name AS GivingCountry, to.name AS ReceivingCountry, sum(vote.points) AS Points
-ORDER BY GivingCountry, Points DESC;
+// MATCH (from:Country)-[vote:VOTED_FOR]->(to:Country)
+// RETURN from.name AS GivingCountry, to.name AS ReceivingCountry, sum(vote.points) AS Points
+// ORDER BY GivingCountry, Points DESC;
 
-// See https://github.com/corey-richardson/comp3007-cw1 for full query result of above
+// See https://github.com/corey-richardson/comp3007-cw1 for full query result of above query
+
 // Below query better captures "persistence" by counting the number of years that a 
 // country has voted for another country, and filtering off single votes.
+
+// Query
 
 MATCH (from:Country)-[vote:VOTED_FOR]->(to:Country)
 WITH from.name AS GivingCountry,
@@ -123,9 +108,8 @@ WHERE YearsVoted > 1
 RETURN GivingCountry, ReceivingCountry, YearsVoted, Points
 ORDER BY GivingCountry, YearsVoted DESC, Points DESC;
 
-// SUCCESS Started streaming 1712 records after 7 ms and completed after 8 ms, displaying first 1000 rows.
+// Results
 
-/**
 GivingCountry,ReceivingCountry,YearsVoted,Points
 albania,greece,12,117
 albania,sweden,11,55
@@ -1839,5 +1823,8 @@ yugoslavia,norway,6,27
 yugoslavia,malta,5,17
 yugoslavia,greece,4,17
 yugoslavia,denmark,2,7
-*/
 
+---
+
+Student Declaration of AI Tool use in this Assessment:
+S1 - Generative AI tools have not been used for this assessment.
