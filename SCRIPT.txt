@@ -92,7 +92,7 @@ Ireland,"\""Rock 'n' Roll Kids\""",1994
 // RETURN from.name AS GivingCountry, to.name AS ReceivingCountry, sum(vote.points) AS Points
 // ORDER BY GivingCountry, Points DESC;
 
-// See https://github.com/corey-richardson/comp3007-cw1 for full query result of above query
+// See https://github.com/corey-richardson/comp3008-cw1/blob/main/ResultFiles/ExerciseFour.csv for full query result of above query
 
 // Below query better captures "persistence" by counting the number of years that a 
 // country has voted for another country, and filtering off single votes.
